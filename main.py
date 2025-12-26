@@ -10,7 +10,7 @@ load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
 
 async def main():
-    await init_db()
+    init_db()  # Синхронная инициализация БД
     bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
     dp.include_router(router)
