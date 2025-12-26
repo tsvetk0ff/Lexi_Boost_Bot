@@ -1,3 +1,3 @@
 aiogram==3.2.0
-aiosqlite
-python-decouple
+sqlite3
+python-dotenv
