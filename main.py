@@ -1,12 +1,13 @@
 import asyncio
 import os
+from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
-from decouple import config
 from handlers import router
 from db import init_db
 
-TOKEN = config('BOT_TOKEN')
+load_dotenv()
+TOKEN = os.getenv('BOT_TOKEN')
 
 async def main():
     await init_db()
