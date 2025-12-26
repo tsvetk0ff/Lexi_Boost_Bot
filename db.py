@@ -1,11 +1,14 @@
-import aiosqlite
+import sqlite3
 from datetime import datetime
+import threading
 
 DB_PATH = "bot.db"
+lock = threading.Lock()
 
-async def init_db():
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("""
+def init_db():
+    with lock:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 telegram_id INTEGER PRIMARY KEY,
                 username TEXT,
@@ -15,28 +18,40 @@ async def init_db():
                 premium_until TIMESTAMP
             )
         """)
-        await db.commit()
+        conn.commit()
+        conn.close()
 
-async def get_user(telegram_id):
-    async with aiosqlite.connect(DB_PATH) as db:
-        cursor = await db.execute("SELECT * FROM users WHERE telegram_id=?", (telegram_id,))
-        return await cursor.fetchone()
+def get_user(telegram_id):
+    with lock:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.execute("SELECT * FROM users WHERE telegram_id=?", (telegram_id,))
+        result = cursor.fetchone()
+        conn.close()
+        return result
 
-async def add_user(telegram_id, username, first_name):
-    joined = datetime.now()
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
+def add_user(telegram_id, username, first_name):
+    with lock:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute(
             "INSERT OR IGNORE INTO users (telegram_id, username, first_name, joined) VALUES (?, ?, ?, ?)",
-            (telegram_id, username, first_name, joined))
-        await db.commit()
+            (telegram_id, username, first_name, datetime.now())
+        )
+        conn.commit()
+        conn.close()
 
-async def update_score(telegram_id, delta=1):
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("UPDATE users SET score = score + ? WHERE telegram_id=?", (delta, telegram_id))
-        await db.commit()
+def update_score(telegram_id, delta=1):
+    with lock:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute("UPDATE users SET score = score + ? WHERE telegram_id=?", (delta, telegram_id))
+        conn.commit()
+        conn.close()
 
-async def get_top(limit=10):
-    async with aiosqlite.connect(DB_PATH) as db:
-        cursor = await db.execute(
-            "SELECT first_name, score FROM users ORDER BY score DESC LIMIT ?", (limit,))
-        return await cursor.fetchall()
+def get_top(limit=10):
+    with lock:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.execute(
+            "SELECT first_name, score FROM users ORDER BY score DESC LIMIT ?", (limit,)
+        )
+        result = cursor.fetchall()
+        conn.close()
+        return result
